@@ -1,6 +1,6 @@
 # FastAPI Calculator CI Project
 
-This is a project for [Your Course Name] to demonstrate a CI/CD pipeline for a simple FastAPI calculator application.
+This is a project for **Python for Web API Development** to demonstrate a CI/CD pipeline for a simple FastAPI calculator application.
 
 It includes:
 * A FastAPI application with basic arithmetic operations.
@@ -33,7 +33,7 @@ It includes:
     uvicorn app.main:app --reload
     ```
 
-The application will be running at `http://120.0.0.1:8000`.
+The application will be running at `http://127.0.0.1:8000`.
 
 ## How to Run Tests
 
