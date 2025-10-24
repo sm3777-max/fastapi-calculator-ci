@@ -1,0 +1,15 @@
+# Virtual Environment
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDE/Editor files
+.vscode/
+.idea/
+
+# Other
+.pytest_cache/
+app.log
