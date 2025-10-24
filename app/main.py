@@ -1,60 +1,78 @@
-# app/main.py
+import logging
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel  # <-- Import BaseModel
 
-import logging  # <-- Import the logging module
-from fastapi import FastAPI, HTTPException
 from .operations import add_op, subtract_op, multiply_op, divide_op
 
-# --- Add this configuration block ---
-logging.basicConfig(
-    level=logging.INFO,  # Set the minimum level of messages to log
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', # Define the log message format
-    handlers=[
-        logging.FileHandler("app.log"),  # Log to a file named app.log
-        logging.StreamHandler()       # Also log to the console
-    ]
-)
-
-# Get a logger instance for this file
+# Logging configuration (keep as-is)
 logger = logging.getLogger(__name__)
-# --- End of new block ---
-
 
 app = FastAPI()
 
-@app.get("/")
-def read_root():
-    logger.info("Root endpoint was accessed.") # <-- Example of an info log
-    return {"message": "FastAPI Calculator is running!"}
+# --- Templates Section (Correct) ---
+templates = Jinja2Templates(directory="app/templates")
 
-@app.get("/add")
-def add(num1: float, num2: float):
-    result = add_op(num1, num2)
-    # Log the successful operation
-    logger.info(f"Add operation: {num1} + {num2} = {result}")
-    return {"result": result}
+# --- Pydantic Model (NEW) ---
+# This defines the structure of the JSON data your frontend will send
+# e.g., {"a": 10.0, "b": 20.0}
+class Numbers(BaseModel):
+    a: float
+    b: float
 
-@app.get("/subtract")
-def subtract(num1: float, num2: float):
-    result = subtract_op(num1, num2)
-    # Log the successful operation
-    logger.info(f"Subtract operation: {num1} - {num2} = {result}")
-    return {"result": result}
+# --- Root Endpoint (Correct) ---
+@app.get("/", response_class=HTMLResponse)
+def read_root(request: Request):
+    """Serves the main HTML calculator page."""
+    return templates.TemplateResponse("index.html", {"request": request})
 
-@app.get("/multiply")
-def multiply(num1: float, num2: float):
-    result = multiply_op(num1, num2)
-    # Log the successful operation
-    logger.info(f"Multiply operation: {num1} * {num2} = {result}")
-    return {"result": result}
+# --- API Endpoints (NEW - This is the fix) ---
 
-@app.get("/divide")
-def divide(num1: float, num2: float):
+@app.post("/add")
+def add_numbers(nums: Numbers):
+    """Adds two numbers."""
     try:
-        result = divide_op(num1, num2)
-        # Log the successful operation
-        logger.info(f"Divide operation: {num1} / {num2} = {result}")
+        result = add_op(nums.a, nums.b)
         return {"result": result}
-    except ValueError as e:
-        # Log the error *before* raising the exception
-        logger.warning(f"Division by zero attempt: {num1} / {num2}") # <-- Log a warning for handled errors
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error in add operation: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.post("/subtract")
+def subtract_numbers(nums: Numbers):
+    """Subtracts two numbers."""
+    try:
+        result = subtract_op(nums.a, nums.b)
+        return {"result": result}
+    except Exception as e:
+        logger.error(f"Error in subtract operation: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.post("/multiply")
+def multiply_numbers(nums: Numbers):
+    """Multiplies two numbers."""
+    try:
+        result = multiply_op(nums.a, nums.b)
+        return {"result": result}
+    except Exception as e:
+        logger.error(f"Error in multiply operation: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.post("/divide")
+def divide_numbers(nums: Numbers):
+    """
+    Divides two numbers.
+    Returns a specific error message for division by zero.
+    """
+    if nums.b == 0:
+        # This JSON response matches your test expectation and frontend code
+        logger.warning("Division by zero attempted.")
+        return {"error": "Cannot divide by zero"}
+    
+    try:
+        result = divide_op(nums.a, nums.b)
+        return {"result": result}
+    except Exception as e:
+        logger.error(f"Error in divide operation: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")

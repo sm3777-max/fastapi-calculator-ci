@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FastAPI Calculator</title>
+</head>
+<body>
+    <h1>FastAPI Calculator</h1>
+    
+    <input type="text" id="num1" placeholder="Number 1">
+    <input type="text" id="num2" placeholder="Number 2">
+    <br><br>
+    
+    <button id="add-button">Add</button>
+    <button id="subtract-button">Subtract</button>
+    <button id="multiply-button">Multiply</button>
+    <button id="divide-button">Divide</button>
+    
+    <h2 id="result-text">Result: </h2>
+
+    <script>
+        // Helper function to make API calls
+        async function calculate(operation) {
+            const num1 = document.getElementById('num1').value;
+            const num2 = document.getElementById('num2').value;
+            const resultText = document.getElementById('result-text');
+            
+            // Basic check to make sure inputs are not empty
+            if (!num1 || !num2) {
+                resultText.innerText = "Error: Please enter both numbers.";
+                return;
+            }
+
+            // 1. Create the data object to send in the request body
+            const requestBody = {
+                a: parseFloat(num1),
+                b: parseFloat(num2)
+            };
+
+            try {
+                // 2. Send a POST request with the data in the body
+                const response = await fetch(`/${operation}`, {
+                    method: 'POST', // <-- Use POST
+                    headers: {
+                        'Content-Type': 'application/json' // <-- Specify JSON
+                    },
+                    body: JSON.stringify(requestBody) // <-- Send the JSON body
+                });
+
+                const data = await response.json();
+
+                // 3. Handle the response data
+                if (response.ok) {
+                    // Check for a result (add, subtract, etc.)
+                    if (data.result !== undefined) {
+                        
+                        // --- THIS IS THE FINAL FIX ---
+                        // Format the number to one decimal place (e.g., 30.0)
+                        // to match your test's expectation.
+                        resultText.innerText = `Result: ${data.result.toFixed(1)}`;
+                    
+                    } 
+                    // Check for a known error (divide by zero)
+                    else if (data.error) {
+                        resultText.innerText = `Error: ${data.error}`;
+                    }
+                } else {
+                    // Handle server errors (like 404, 500, etc.)
+                    resultText.innerText = `Error: ${data.detail || 'An unknown error occurred'}`;
+                }
+
+            } catch (error) {
+                // Handle network errors (e.g., server is down)
+                resultText.innerText = `Error: ${error.message}`;
+            }
+        }
+
+        // Add event listeners to buttons
+        document.getElementById('add-button').onclick = () => calculate('add');
+        document.getElementById('subtract-button').onclick = () => calculate('subtract');
+        document.getElementById('multiply-button').onclick = () => calculate('multiply');
+        document.getElementById('divide-button').onclick = () => calculate('divide');
+    </script>
+</body>
+</html>
