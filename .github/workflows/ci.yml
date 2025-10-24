@@ -1,9 +1,6 @@
-# .github/workflows/ci.yml
-
 name: FastAPI Calculator CI
 
-# This tells GitHub to run the workflow on every 'push'
-# to your 'main' branch, or on any pull request.
+# Triggers the workflow on push or pull request events for the "main" branch
 on:
   push:
     branches: [ main ]
@@ -12,48 +9,46 @@ on:
 
 jobs:
   test:
-    # This job will run on a fresh Ubuntu machine
+    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Checks out your repository's code
+    # 1. Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - name: Check out code
       uses: actions/checkout@v4
 
-    # 2. Sets up the Python version
+    # 2. Sets up a Python 3.10 environment
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10' 
+        python-version: '3.10'
 
-    # 3. Installs all your project's dependencies
+    # 3. Installs all Python dependencies from requirements.txt
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
-    # 4. Installs the OS-level dependencies for Playwright
-    # This is the 'sudo' command that you ran locally
+    # 4. FIX 1: Installs OS dependencies for Playwright using 'sudo python -m'
     - name: Install Playwright OS dependencies
-      run: sudo playwright install-deps
+      run: sudo python -m playwright install-deps
 
-    # 5. Installs the Playwright browsers (Chromium, etc.)
+    # 5. Installs the Playwright browsers (Chromium, Firefox, WebKit)
     - name: Install Playwright browsers
       run: playwright install
 
-    # 6. Runs your fast tests (unit and integration)
+    # 6. Runs your fast unit and integration tests
     - name: Run Unit and Integration Tests
       run: pytest tests/test_unit.py tests/test_integration.py
 
-    # 7. Runs your E2E tests (this is the complex part)
+    # 7. Runs your end-to-end tests
     - name: Run E2E Tests
       run: |
         # Start the FastAPI server in the background
-        # We use port 8008 just to be safe
         uvicorn app.main:app --host 0.0.0.0 --port 8008 &
         
-        # Wait for 5 seconds to give the server time to start
+        # Wait 5 seconds for the server to start
         sleep 5
         
-        # Run the E2E tests against the server
-        pytest tests/test_e2E.py --base-url http://127.0.0.1:8008
+        # FIX 2: Runs tests (ensuring 'test_e2e.py' is all lowercase)
+        pytest tests/test_e2e.py --base-url http://127.0.0.1:8008
